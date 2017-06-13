@@ -1,162 +1,178 @@
 <!doctype html>
 <html>
 <head>
-  <script src="https://code.jquery.com/jquery-latest.min.js"></script>
-  <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-  <script src="d3-timeline.js"></script>
+	<script src="https://code.jquery.com/jquery-latest.min.js"></script>
+	<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+	<script src="d3-timeline.js"></script>
 
-  <style type="text/css">
-    .axis path,
-    .axis line {
-      fill: none;
-      stroke: black;
-      shape-rendering: crispEdges;
-    }
+	<style type="text/css">
+		.axis path,
+		.axis line {
+			fill: none;
+			stroke: black;
+			shape-rendering: crispEdges;
+		}
 
-    .axis text {
-      font-family: sans-serif;
-      font-size: 10px;
-    }
+		.axis text {
+			font-family: sans-serif;
+			font-size: 10px;
+		}
 
-    .timeline-label {
-      font-family: sans-serif;
-      font-size: 12px;
-    }
+		.timeline-label {
+			font-family: sans-serif;
+			font-size: 12px;
+		}
 
-    #timeline2 .axis {
-      transform: translate(0px,40px);
-      -ms-transform: translate(0px,40px); /* IE 9 */
-      -webkit-transform: translate(0px,40px); /* Safari and Chrome */
-      -o-transform: translate(0px,40px); /* Opera */
-      -moz-transform: translate(0px,40px); /* Firefox */
-    }
+		.coloredDiv {
+			height:20px; width:20px; float:left;
+		}
+	</style>
+	<script type="text/javascript">
+		window.onload = function() {
 
-    .coloredDiv {
-      height:20px; width:20px; float:left;
-    }
-  </style>
-  <script type="text/javascript">
-    window.onload = function() {
+			formatDay = function(d) {
+					var days = Math.floor(d / 86400),
+							hours = Math.floor((d - (days * 86400)) / 3600),
+							minutes = Math.floor((d - (days * 86400) - (hours * 3600)) / 60);
+							//seconds = d - (days * 86400) - (hours * 3600) - (minutes * 60);
+					var output = '';
+					//if (seconds) {
+					//	output = seconds + 's';
+					//}
+					if (minutes) {
+							output = minutes + 'm ' + output;
+					}
+					if (hours) {
+							output = hours + 'h ' + output;
+					}
+					if (days) {
+							output = days + 'd ' + output;
+					}
+					return output;
+			};
 
-      var testData = [
-        {name: "step1", times: [{"starting_time": 0, "ending_time": 135}]},
-        {name: "step2", times: [{"starting_time": 120, "ending_time": 160}, ]},
-        {name: "step3", times: [{"starting_time": 160, "ending_time": 175}]}
-      ];
+			// beginning has to be > 0
+			var testData = [
+				{name: "Hydrocortisone", times: [{"starting_time": 1, "ending_time": 691201, "concentration": "10.0 uM"}]},  // 0-8 days (8)
+				{name: "SCF", times: [{"starting_time": 691201, "ending_time": 1382401, "concentration": "100.0 ng/mL"}]}, // 8-16 days (8)
+				{name: "IL3", times: [
+					{"starting_time": 1382401, "ending_time": 2073601, "concentration": "5.0 ng/mL"},  // 16-24 days (8)
+					{"starting_time": 2764801, "ending_time": 3024001, "concentration": "5.0 ng/mL"},   // 32-35 days, (3) after Epo
+				]}, // 8 days, 3 days
+				{name: "Epo", times: [{"starting_time": 2073601, "ending_time": 2764801, "concentration": "3.0 Ul/ml"}]}, // 24-32 days (8)
+				{name: "Epo Feeder layer", times: [{"starting_time": 3024001, "ending_time": 3369601, "concentration": "3.0 Ul/ml"}]},  // 35-39 days (4)
+				{name: "Epo chemical Feeder layer", times: [{"starting_time": 3369601, "ending_time": 3715201, "concentration": "3.0 Ul/ml"}]}  // 39-43 days (4)
+			];
 
-      var width = 500;
+			var width = 900;
 
-      function timelineHover() {
-        var chart = d3.timeline()
-          .relativeTime()
-          .tickFormat({
-            format: function(d) { return d3.time.format("%M")(d) },
-            tickTime: d3.time.minutes,
-            tickInterval: 15,
-            tickSize: 15,
-          })
-          .margin({left:70, right:30, top:0, bottom:0})
-          .hover(function (d, i, datum) {
-          // d is the current rendering object
-          // i is the index during d3 rendering
-          // datum is the id object
-            var div = $('#hoverRes');
-            var colors = chart.colors();
-            div.find('.coloredDiv').css('background-color', colors(i))
-            div.find('#name').text(datum.name);
-          })
-          .click(function (d, i, datum, point) {
-            console.log("timelineHover", datum.name);
-            console.log("point", point)
-            $("#assays").append("<div>\
-            <label>Assay Type:</label><select><option value=\"dnase\">DNAseSeq</option><option value=\"rnase\">RNASeq</option></select> \
-            <label>Assay Timepoint:</label><span>"+ d3.round(point[0]) + "</span> \
-            </div>");
-          });
+			function secondFormat(num) {
+				var h = Math.floor( num / 3600 );
+				var m = Math.floor((num - h * 3600) / 60 );
+				var s = num - (h * 3600 + m * 60);
+				return ( h < 10 ? "0" + h : h ) + ":" + ( m < 10 ? "0" + m : m ) + ":" + ( s < 10 ? "0" + s : s );
+			}
+			function timelineHover() {
+				var chart = d3.timeline()
+					.linearTime()
+					// .tickFormat({
+					// 	format: d3.time.format("%I"),
+					// 	tickTime: d3.time.days,
+					// 	tickInterval: 1,
+					// 	tickSize: 1,
+					// })
+/*          .tickFormat({
+						//format: function(d) { return d3.time.format("%H:%M:%S")(d) },
+						format: (d) => {
+							console.log("format d ", d);
+							secondFormat(d);
+						}
+						*/
+	//          tickTime: d3.time.days,
+	//          tickInterval: 86400,
+	//          tickSize: 1,
+					//})
+					.margin({left:10, right:30, top:30, bottom:0})
+					.hover(function (d, i, datum) {
+					// d is the current rendering object
+					// i is the index during d3 rendering
+					// datum is the id object
+						var div = $('#hoverRes');
+						var colors = chart.colors();
+						div.find('.coloredDiv').css('background-color', colors(i));
+						div.find('#name').text(datum.name);
+					})
+					.click(function (d, i, datum, point, duration) {
+						//let
+						$("#assays").append("<tr>\
+						<td><label>Step:</label><span>" + datum.name + "</span></td>\
+						<td><label>Assay Type:</label><select><option value=\"dnase\">DNAseSeq</option><option value=\"rnase\">RNASeq</option></select></td>\
+						<td><label>Assay Timepoint:</label><input type=\"text\" value=\""+ formatDay(d3.round(duration)) + "\"></input></td>\
+						</tr>");
+					})
+					.rotateTicks(45);
 
-        var svg = d3.select("#timeline").append("svg").attr("width", width)
-          .datum(testData).call(chart);
-      }
+				var svg = d3.select("#timeline").append("svg").attr("width", width)
+					.datum(testData).call(chart);
+			}
 
-      timelineHover();
+			timelineHover();
 
-    }
-  </script>
+		function createTable() {
+				var table = $("<tbody></tbody>");
+				for (var i = 0; i < testData.length; i++ ){
+					var step = testData[i];
+					var times = testData[i]['times'];
+					for (var j = 0; j < times.length; j++ ) {
+						var $line = $("<tr></tr>");
+						$line.append($("<td></td>").html(step.name));
+						$line.append($("<td></td>").html(times[j].concentration));
+						$line.append($("<td></td>").html(formatDay(times[j].starting_time)));
+						$line.append($("<td></td>").html(formatDay(times[j].ending_time - times[j].starting_time)));
+						table.append($line);
+					}
+				}
+
+				return table;
+		}
+
+			$("#treatments").append(createTable());
+		}
+	</script>
 </head>
 <body>
 
-  <div>
-    <h3>Differentiation</h3>
+	<div>
+		<h3>Differentiation</h3>
 	<div id="protocol">Erythroid - J.Namath Nature 2010</div>
 	<div id="days">11 Days</div>
-    <div id="timeline"></div>
-    <div id="hoverRes">
-      <div class="coloredDiv"></div>
-      <div id="name"></div>
-    </div>
-  </div>
-  <div>&nbsp;
-  </div>
-  <div id="steps">
-    <h3>Treatments</h3>
-	  <table>
-		  <thead>
-			  <tr>
-			  <th>Treatment</th>
-			  <th>Concentration</th>
-			  <th>Duration</th>
-			  </tr>
-		  </thead>
-		  <tbody>
-			  <tr>
-					<td>Hydrocortisone</td>
-					<td>10.0 uM</td>
-					<td>8.0 day</td>
-			 </tr>
-       <tr>
-         <td>SCF</td>
-         <td>100.0 ng/mL</td>
-         <td>8.0 day</td>
-      </tr>
+		<div id="timeline"></div>
+		<div id="hoverRes">
+			<div class="coloredDiv"></div>
+			<div id="name"></div>
+		</div>
+	</div>
+	<div>&nbsp;
+	</div>
+	<div id="steps">
+		<h3>Treatments</h3>
+		<table id="treatments">
+			<thead>
+				<tr>
+				<th>Treatment</th>
+				<th>Concentration</th>
+				<th>Start time</th>
+				<th>Duration</th>
+				</tr>
+			</thead>
+		</table>
 
-      <tr>
-        <td>IL3</td>
-        <td>5.0 ng/mL</td>
-        <td>8.0 day</td>
-     </tr>
-
-     <tr>
-       <td>Epo</td>
-       <td>3.0 Ul/ml</td>
-       <td>8.0 day</td>
-    </tr>
-    <tr>
-      <td>IL3</td>
-      <td>5.0 ng/mL</td>
-      <td>3.0 day</td>
-   </tr>
-
-    <tr>
-      <td>Epo Feeder layer</td>
-      <td>3.0 Ul/ml</td>
-      <td>4.0 day</td>
-   </tr>
-
-   <tr>
-     <td>Epo chemical Feeder layer</td>
-     <td>3.0 Ul/ml</td>
-     <td>3.0 day</td>
-  </tr>
-
-		  </tbody>
-	  </table>
-
-  </div>
-  <div>
-    <h3>Assays</h3>
-  <div id="assays">
-  </div>
-  </div>
+	</div>
+	<div>
+		<h3>Assays</h3>
+	<table id="assays">
+	</table>
+	</div>
 
 </body>
 </html>
