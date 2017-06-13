@@ -57,14 +57,14 @@
 			// beginning has to be > 0
 			var testData = [
 				{name: "Hydrocortisone", times: [{"starting_time": 1, "ending_time": 691201, "concentration": "10.0 uM"}]},  // 0-8 days (8)
-				{name: "SCF", times: [{"starting_time": 691201, "ending_time": 1382401, "concentration": "100.0 ng/mL"}]}, // 8-16 days (8)
+				{name: "SCF", times: [{"starting_time": 691201, "ending_time": 698401, "concentration": "100.0 ng/mL"}]}, // 8 days 0 hours - 8 days 2 hours
 				{name: "IL3", times: [
-					{"starting_time": 1382401, "ending_time": 2073601, "concentration": "5.0 ng/mL"},  // 16-24 days (8)
-					{"starting_time": 2764801, "ending_time": 3024001, "concentration": "5.0 ng/mL"},   // 32-35 days, (3) after Epo
+					{"starting_time": 698401, "ending_time": 784801, "concentration": "5.0 ng/mL"},  // 8 days 2 hours - 9 days 2 hours
+					{"starting_time": 806401, "ending_time": 1080001, "concentration": "5.0 ng/mL"},   // 9 days 8 hours to 12 days 12 hours, (3) after Epo
 				]}, // 8 days, 3 days
-				{name: "Epo", times: [{"starting_time": 2073601, "ending_time": 2764801, "concentration": "3.0 Ul/ml"}]}, // 24-32 days (8)
-				{name: "Epo Feeder layer", times: [{"starting_time": 3024001, "ending_time": 3369601, "concentration": "3.0 Ul/ml"}]},  // 35-39 days (4)
-				{name: "Epo chemical Feeder layer", times: [{"starting_time": 3369601, "ending_time": 3715201, "concentration": "3.0 Ul/ml"}]}  // 39-43 days (4)
+				{name: "Epo", times: [{"starting_time": 784801, "ending_time": 806401, "concentration": "3.0 Ul/ml"}]}, // 9 days 2 hours - 9 days 8 hours
+				{name: "Epo Feeder layer", times: [{"starting_time": 1080001, "ending_time": 1209601, "concentration": "3.0 Ul/ml"}]},  // 12 days 12 hours to 14 days
+				{name: "Epo chemical Feeder layer", times: [{"starting_time": 1209601, "ending_time": 1555201, "concentration": "3.0 Ul/ml"}]}  // 14 days to 18 days (4)
 			];
 
 			var width = 900;
@@ -78,6 +78,7 @@
 			function timelineHover() {
 				var chart = d3.timeline()
 					.linearTime()
+					.stack()
 					// .tickFormat({
 					// 	format: d3.time.format("%I"),
 					// 	tickTime: d3.time.days,

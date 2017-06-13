@@ -78,6 +78,7 @@
 			function timelineHover() {
 				var chart = d3.timeline()
 					.linearTime()
+					.stack()
 					// .tickFormat({
 					// 	format: d3.time.format("%I"),
 					// 	tickTime: d3.time.days,

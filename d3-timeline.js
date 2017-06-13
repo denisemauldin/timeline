@@ -49,14 +49,15 @@
 				showAxisNav = false,
 				showAxisCalendarYear = false,
 				axisBgColor = "white",
-				chartData = {}
+				chartData = {},
+				chartFlags = []
 			;
 
 		var appendTimeAxis = function(g, xAxis, yPosition) {
 
 			if(showAxisHeaderBackground){ appendAxisHeaderBackground(g, 0, 0); }
 
-			if(showAxisNav){ appendTimeAxisNav(g) };
+			if (showAxisNav) { appendTimeAxisNav(g); }
 
 			var axis = g.append("g")
 				.attr("class", "axis")
@@ -68,7 +69,7 @@
 			var calendarLabel = beginning.getFullYear();
 
 			if (beginning.getFullYear() != ending.getFullYear()) {
-				calendarLabel = beginning.getFullYear() + "-" + ending.getFullYear()
+				calendarLabel = beginning.getFullYear() + "-" + ending.getFullYear();
 			}
 
 			nav.append("text")
@@ -90,7 +91,7 @@
 					.attr("transform", "translate(0, 20)")
 				;
 
-			if(showAxisCalendarYear) { appendTimeAxisCalendarYear(nav) };
+			if(showAxisCalendarYear) { appendTimeAxisCalendarYear(nav); }
 
 			nav.append("text")
 				.attr("transform", "translate(" + leftNavMargin + ", 0)")
@@ -155,7 +156,7 @@
 				.attr("transform", "translate(" + labelMargin + "," + rowsDown + ")")
 				.text(hasLabel ? labelFunction(datum.label) : datum.id)
 				.on("click", function (d, i) {
-					let point = d3.mouse(this);
+					var point = d3.mouse(this);
 					gParent.append("rect").attr("id", "clickpoint").attr("x", point[0]).attr("width", 10).attr("height", itemHeight);
 					click(d, index, datum, point, xScale.invert(point[0]));
 				});
@@ -285,7 +286,7 @@
 					.tickSize(tickFormat.tickSize);
 			}
 
-			if (tickFormat.tickValues != null) {
+			if (tickFormat.tickValues !== null) {
 				xAxis.tickValues(tickFormat.tickValues);
 			} else {
 				xAxis.ticks(tickFormat.numTicks || tickFormat.tickTime, tickFormat.tickInterval);
@@ -345,11 +346,14 @@
 							mouseout(d, i, datum);
 						})
 						.on("click", function (d, i) {
-							console.log("d", d)
-							let point = d3.mouse(this);
-							g.append("rect").attr("class", "clickpoint-"+point[0]).attr("x", point[0]).attr("width", 1).attr("height", itemHeight+ margin.top);
-							g.append("text").attr("x", point[0]+2).attr("y", itemHeight).text(d.name)
-							click(d, index, datum, point, xScale.invert(point[0]));
+							console.log("d", d);
+							console.log(this.getBoundingClientRect());
+							var point = d3.mouse(this);
+							var count = chartFlags.length + 1;
+							var bar = g.append("rect").attr("class", "clickpoint-"+count).attr("x", point[0]).attr("width", 1).attr("height", this.getBoundingClientRect().bottom);
+							var flag = g.append("text").attr("x", point[0]+2).attr("y", itemHeight).text(count + '-' + d.name);
+							chartFlags.push({bar, flag});
+							click(d, index, datum, count, xScale.invert(point[0]));
 						})
 						.attr("class", function (d, i) {
 							return datum.class ? "timelineSeries_"+datum.class : "timelineSeries_"+index;
@@ -437,8 +441,8 @@
 				g.selectAll(".tick text")
 					.attr("transform", function(d) {
 						return "rotate(" + rotateTicks + ")translate("
-							+ (this.getBBox().width / 2 + 10) + "," // TODO: change this 10
-							+ this.getBBox().height / 2 + ")";
+							               + (this.getBBox().width / 2 + 10) + "," // TODO: change this 10
+							               + this.getBBox().height / 2 + ")";
 					});
 			}
 
@@ -656,7 +660,7 @@
 		timeline.linearTime = function() {
 			timeIsLinear = !timeIsLinear;
 			return timeline;
-		}
+		};
 
 		timeline.showBorderLine = function () {
 			showBorderLine = !showBorderLine;
@@ -732,7 +736,7 @@
 
 		timeline.showAxisHeaderBackground = function(bgColor) {
 			showAxisHeaderBackground = !showAxisHeaderBackground;
-			if(bgColor) { (axisBgColor = bgColor) };
+			if(bgColor) { (axisBgColor = bgColor); }
 			return timeline;
 		};
 
