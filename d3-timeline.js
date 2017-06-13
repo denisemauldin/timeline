@@ -34,8 +34,8 @@
 				timeIsRelative = false,
 				timeIsLinear = false,
 				fullLengthBackgrounds = false,
-				itemHeight = 20,
-				itemMargin = 5,
+				itemHeight = 40,
+				itemMargin = 0,
 				navMargin = 60,
 				showTimeAxis = true,
 				showAxisTop = false,
@@ -49,8 +49,7 @@
 				showAxisNav = false,
 				showAxisCalendarYear = false,
 				axisBgColor = "white",
-				chartData = {},
-				chartFlags = []
+				chartData = {}
 			;
 
 		var appendTimeAxis = function(g, xAxis, yPosition) {
@@ -156,6 +155,7 @@
 				.attr("transform", "translate(" + labelMargin + "," + rowsDown + ")")
 				.text(hasLabel ? labelFunction(datum.label) : datum.id)
 				.on("click", function (d, i) {
+					console.log("label click!")
 					var point = d3.mouse(this);
 					gParent.append("rect").attr("id", "clickpoint").attr("x", point[0]).attr("width", 10).attr("height", itemHeight);
 					click(d, index, datum, point, xScale.invert(point[0]));
@@ -308,6 +308,7 @@
 
 					if (backgroundColor) { appendBackgroundBar(yAxisMapping, index, g, data, datum); }
 
+					// draws the display elements (circles or rectangles)
 					g.selectAll("svg").data(data).enter()
 						.append(function(d, i) {
 								return document.createElementNS(d3.ns.prefix.svg, "display" in d? d.display:display);
@@ -346,14 +347,11 @@
 							mouseout(d, i, datum);
 						})
 						.on("click", function (d, i) {
-							console.log("d", d);
-							console.log(this.getBoundingClientRect());
 							var point = d3.mouse(this);
-							var count = chartFlags.length + 1;
-							var bar = g.append("rect").attr("class", "clickpoint-"+count).attr("x", point[0]).attr("width", 1).attr("height", this.getBoundingClientRect().bottom);
-							var flag = g.append("text").attr("x", point[0]+2).attr("y", itemHeight).text(count + '-' + d.name);
-							chartFlags.push({bar, flag});
-							click(d, index, datum, count, xScale.invert(point[0]));
+							var selectedRect = d3.select(this).node();
+							var selectorLabel = "text#" + selectedRect.id;
+							var selectedLabel = d3.select(selectorLabel).node();
+							click(d, index, datum, selectedLabel, selectedRect, xScale.invert(point[0]));
 						})
 						.attr("class", function (d, i) {
 							return datum.class ? "timelineSeries_"+datum.class : "timelineSeries_"+index;
@@ -368,12 +366,24 @@
 						})
 					;
 
+					// appends the labels to the boxes
 					g.selectAll("svg").data(data).enter()
 						.append("text")
+						.attr("class", "textlabels")
+						.attr("id", (d) => (d.label))
 						.attr("x", getXTextPos)
 						.attr("y", getStackTextPosition)
 						.text(function(d) {
 							return d.label;
+						})
+						.on("click", function(d, i){
+							// when clicking on the label, call the click for the rectangle with the same id
+							var point = d3.mouse(this);
+							var id = this.id;
+							var selectedLabel = d3.select(this).node();
+							var selector = "rect#" + id;
+							var selectedRect = d3.select(selector).node();
+							click(d, index, datum, selectedLabel, selectedRect, xScale.invert(point[0]));
 						})
 					;
 
