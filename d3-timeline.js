@@ -9,6 +9,7 @@
 				click = function () {},
 				scroll = function () {},
 				labelFunction = function(label) { return label; },
+				labelFloat = 25,  // floats up this many pixels
 				navigateLeft = function () {},
 				navigateRight = function () {},
 				orient = "bottom",
@@ -34,7 +35,7 @@
 				timeIsRelative = false,
 				timeIsLinear = false,
 				fullLengthBackgrounds = false,
-				itemHeight = 40,
+				itemHeight = 60,
 				itemMargin = 0,
 				navMargin = 60,
 				showTimeAxis = true,
@@ -349,7 +350,7 @@
 						.on("click", function (d, i) {
 							var point = d3.mouse(this);
 							var selectedRect = d3.select(this).node();
-							var selectorLabel = "text#" + selectedRect.id;
+							var selectorLabel = "text#" + selectedRect.id + '.textnumbers';
 							var selectedLabel = d3.select(selectorLabel).node();
 							click(d, index, datum, selectedLabel, selectedRect, xScale.invert(point[0]));
 						})
@@ -366,15 +367,38 @@
 						})
 					;
 
-					// appends the labels to the boxes
+					// appends the labels to the boxes - DAY/HOUR LABEL
 					g.selectAll("svg").data(data).enter()
 						.append("text")
 						.attr("class", "textlabels")
-						.attr("id", (d) => (d.label))
-						.attr("x", getXTextPos)
-						.attr("y", getStackTextPosition)
+						.attr("id", (d) => (d.id))
+						.attr("x", (d) => getXTextPos(d, d.label, '.textlabels'))
+						.attr("y", (getStackTextPosition() - labelFloat))
 						.text(function(d) {
 							return d.label;
+						})
+						.on("click", function(d, i){
+							// when clicking on the label, call the click for the rectangle with the same id
+							var point = d3.mouse(this);
+							var id = this.id;
+							var labelSelector = "text#" + id + ".textnumbers"
+							//var selectedLabel = d3.select(this).node();
+							var selectedLabel = d3.select(labelSelector).node();
+							var selector = "rect#" + id;
+							var selectedRect = d3.select(selector).node();
+							click(d, index, datum, selectedLabel, selectedRect, xScale.invert(point[0]));
+						})
+					;
+
+					// appends the NUMBER LABEL
+					g.selectAll("svg").data(data).enter()
+						.append("text")
+						.attr("class", "textnumbers")
+						.attr("id", (d) => (d.id))
+						.attr("x", (d, i) => getXTextPos(d, d.number, '.textnumbers'))
+						.attr("y", getStackTextPosition)
+						.text(function(d) {
+							return d.number;
 						})
 						.on("click", function(d, i){
 							// when clicking on the label, call the click for the rectangle with the same id
@@ -480,8 +504,28 @@
 				return margin.left + (d.starting_time - beginning) * scaleFactor;
 			}
 
-			function getXTextPos(d, i) {
-				return margin.left + (d.starting_time - beginning) * scaleFactor + 5;
+
+			function getTextWidth(text, font) {
+			    // re-use canvas object for better performance
+			    var canvas = getTextWidth.canvas || (getTextWidth.canvas = document.createElement("canvas"));
+			    var context = canvas.getContext("2d");
+			    context.font = font;
+			    var metrics = context.measureText(text);
+			    return metrics.width;
+			}
+
+			function getXTextPos(d, text, style) {
+				var width = (((d.ending_time - d.starting_time) / 2) * scaleFactor);
+				// get the style data for the class selector pass in
+				var textl = getComputedStyle(document.querySelector(style));
+				// create a fontsize fontfamily string - 12pt Graphik
+				var fontInfo = textl.fontSize + ' ' + textl.fontFamily;
+				// calculate the width of the text in that fontsize
+				var tl = getTextWidth(text, fontInfo);
+				// subtract half of the text length from the xPosition to keep the text centered
+				var textLength = tl / 2;
+				var xPosition = margin.left + ((d.starting_time - beginning) * scaleFactor) + width - textLength;
+				return xPosition;
 			}
 
 			function setHeight() {
