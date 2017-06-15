@@ -2,7 +2,7 @@
 <html>
 <head>
 	<script src="https://code.jquery.com/jquery-latest.min.js"></script>
-	<script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+	<script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
 	<script src="d3-timeline.js"></script>
 
 	<style type="text/css">
@@ -87,7 +87,9 @@
 			];
 			var width = 400;
 
-			var colorScale = d3.scale.ordinal().range(['#ffffff']);
+      // d3 v3
+			// var colorScale = d3.scale.ordinal().range(['#ffffff']);
+			var colorScale = d3.scaleOrdinal().range(['#ffffff']);
 			function buildTable() {
 				var tbody = d3.select("#assays > tbody")
 				var rows = tbody.selectAll('tr').data(timepoints, function(d) { return d.id });
@@ -97,7 +99,7 @@
 					.attr("id", (d) => d.id)
 					.html(function(d) {
 						var html = "<td><select id=\"assay_" + d.id + "\" ><option value=\"dnase\">DNAseSeq</option><option value=\"rnase\">RNASeq</option></select></td>\
-											<td><input id=\"duration_" + d.id + "\" type=\"text\" value=\""+ formatDay(d3.round(d.duration)) + "\"></input></td>\
+											<td><input id=\"duration_" + d.id + "\" type=\"text\" value=\""+ formatDay(Math.round(d.duration)) + "\"></input></td>\
 											<td><input id=\"replication_" + d.id + "\" type=\"text\"></input></td>";
 						return html;
 					})
@@ -151,7 +153,8 @@
 					.rotateTicks(45);
 
 
-
+				// v3 returns [Array(1)] => [svg]
+				// v4 returns
 				var svg = d3.select("#timeline").append("svg").attr("width", width)
 					.datum(testData).call(chart);
 			}

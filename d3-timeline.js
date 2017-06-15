@@ -17,13 +17,25 @@
 				height = null,
 				rowSeparatorsColor = null,
 				backgroundColor = null,
-				tickFormat = { format: d3.time.format("%I %p"),
+				/* d3 v4 */
+				tickFormat = {
+					'format': d3.timeFormat("%I %p"),
+					'tickTime': d3.timeHour,
+					'tickInterval': 1,
+					'tickSize': 6,
+					'tickValues': null
+				},
+				colorCycle = d3.scaleOrdinal(d3.schemeCategory20),
+				/* d3 v3
+				tickFormat = {
+					format: d3.time.format("%I %p"),
 					tickTime: d3.time.hours,
 					tickInterval: 1,
 					tickSize: 6,
 					tickValues: null
 				},
-				colorCycle = d3.scale.category20(),
+				colorCycle = d3.scale.category20,
+				*/
 				colorPropertyName = null,
 				display = "rect",
 				beginning = 0,
@@ -156,7 +168,7 @@
 				.attr("transform", "translate(" + labelMargin + "," + rowsDown + ")")
 				.text(hasLabel ? labelFunction(datum.label) : datum.id)
 				.on("click", function (d, i) {
-					console.log("label click!")
+					console.log("label click!");
 					var point = d3.mouse(this);
 					gParent.append("rect").attr("id", "clickpoint").attr("x", point[0]).attr("width", 10).attr("height", itemHeight);
 					click(d, index, datum, point, xScale.invert(point[0]));
@@ -165,9 +177,12 @@
 
 		function timeline (gParent) {
 			var g = gParent.append("g");
-			var gParentSize = gParent[0][0].getBoundingClientRect();
-
-			var gParentItem = d3.select(gParent[0][0]);
+			// v3
+			//var gParentSize = gParent[0][0].getBoundingClientRect();
+			//var gParentItem = d3.select(gParent[0][0]);
+			// v4
+			var gParentSize = gParent._groups[0][0].getBoundingClientRect();
+			var gParentItem = d3.select(gParent._groups[0][0]);
 
 			var yAxisMapping = {},
 				maxStack = 1,
@@ -266,16 +281,21 @@
 			var xScale;
 			var xAxis;
 			if (timeIsLinear) {
-				xScale = d3.scale.linear()
+				// d3 v3
+				/* xScale = d3.scale.linear()
 					.domain([beginning, ending])
 					.range([margin.left, width - margin.right]);
-				xAxis = d3.svg.axis()
+					*/
+				xScale = d3.scaleLinear()
+					.domain([beginning, ending])
+					.range([margin.left, width - margin.right]);
+				xAxis = d3.axisBottom()
 					.scale(xScale)
-					.orient(orient)
 					.tickFormat(formatDays)
 					.tickValues(d3.range(0, ending, 86400));
 			} else {
-				// draw the axis
+				// draw the axis v3
+				/*
 				xScale = d3.time.scale()
 					.domain([beginning, ending])
 					.range([margin.left, width - margin.right]);
@@ -285,6 +305,17 @@
 					.orient(orient)
 					.tickFormat(tickFormat.format)
 					.tickSize(tickFormat.tickSize);
+				*/
+			  // v4
+					xScale = d3.scaleTime()
+						.domain([beginning, ending])
+						.range([margin.left, width - margin.right]);
+
+					xAxis = d3.axisBottom()
+						.scale(xScale)
+						.tickFormat(tickFormat.format)
+						.tickSize(tickFormat.tickSize);
+
 			}
 
 			if (tickFormat.tickValues !== null) {
@@ -310,10 +341,17 @@
 					if (backgroundColor) { appendBackgroundBar(yAxisMapping, index, g, data, datum); }
 
 					// draws the display elements (circles or rectangles)
+					// v3
+					/*
 					g.selectAll("svg").data(data).enter()
 						.append(function(d, i) {
 								return document.createElementNS(d3.ns.prefix.svg, "display" in d? d.display:display);
 						})
+						*/
+						g.selectAll(display).data(data).enter()
+							.append(function(d, i) {
+									return document.createElementNS(d3.namespaces.svg, "display" in d? d.display:display);
+							})
 						.attr("x", getXPos)
 						.attr("y", getStackPosition)
 						.attr("width", function (d, i) {
@@ -381,7 +419,7 @@
 							// when clicking on the label, call the click for the rectangle with the same id
 							var point = d3.mouse(this);
 							var id = this.id;
-							var labelSelector = "text#" + id + ".textnumbers"
+							var labelSelector = "text#" + id + ".textnumbers";
 							//var selectedLabel = d3.select(this).node();
 							var selectedLabel = d3.select(labelSelector).node();
 							var selector = "rect#" + id;
@@ -479,8 +517,9 @@
 							               + this.getBBox().height / 2 + ")";
 					});
 			}
-
-			var gSize = g[0][0].getBoundingClientRect();
+			// v3
+			//var gSize = g[0][0].getBoundingClientRect();
+			var gSize = g._groups[0][0].getBoundingClientRect();
 			setHeight();
 
 			if (showBorderLine) {
@@ -534,7 +573,9 @@
 						// set height based off of item height
 						height = gSize.height + gSize.top - gParentSize.top;
 						// set bounding rectangle height
-						d3.select(gParent[0][0]).attr("height", height);
+						// v3
+						// d3.select(gParent[0][0]).attr("height", height);
+						d3.select(gParent._groups[0][0]).attr("height", height);
 					} else {
 						throw "height of the timeline is not set";
 					}
